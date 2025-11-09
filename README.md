@@ -13,8 +13,9 @@ multiple separate instances with different plugin sets.
 ## The Solution
 
 Denver makes it easy to create, manage, and switch between multiple isolated
-Discourse development environments. Each environment gets its own cloned
-discourse repo, plugin set, and dev container configuration.
+Discourse development environments. Uses git worktrees for instant environment
+creation (less than 1 second after initial setup). Each environment gets its
+own branch, plugin set, and isolated working directory.
 
 ## Installation
 
@@ -33,15 +34,31 @@ go build -o denver
 ## Quick Start
 
 ```bash
-# Create a minimal environment
+# Create a minimal environment (first run clones bare repo, takes a few minutes)
 denver create minimal --profile base
 
-# Create environment with custom branch
+# Create another environment (instant - uses worktree)
 denver create test-pr --profile base --branch fix/my-feature
+
+# Add plugins to an environment
+denver create with-chat --profile base --plugin discourse-chat
 
 # Destroy an environment
 denver destroy minimal
 ```
+
+## How It Works
+
+**Git Worktrees**: Denver uses git worktrees to share a single bare repository
+across all environments. The first `create` command clones discourse to
+`~/.denver/discourse.git` (takes a few minutes). Subsequent environments are
+created instantly as worktrees.
+
+**Benefits**:
+- First environment: ~3 minutes (one-time bare repo clone)
+- Additional environments: <1 second
+- Disk savings: ~400MB per environment (shared .git)
+- Each environment gets its own branch (named after the environment)
 
 ## Profiles
 
@@ -101,24 +118,27 @@ denver create <name> --profile <profile> [flags]
 
 Flags:
 - `--profile, -p`: Profile to use (required)
-- `--branch, -b`: Discourse core branch to checkout
-- `--plugin`: Add or override plugin (format: name:branch, repeatable)
+- `--branch, -b`: Base branch for worktree (default: main)
+- `--plugin`: Add plugins beyond profile (format: name, repeatable)
 
 Examples:
 
 ```bash
-# Basic environment
+# Basic environment (creates branch "yaks" from main)
 denver create yaks --profile base
 
-# Test a core PR
+# Test a core PR (creates branch "test-buttons" from fix/button-refactor)
 denver create test-buttons --profile base --branch fix/button-refactor
 
 # Add plugins to base profile
-denver create yaks-dev --profile base --plugin discourse-yaks:feature/new-stuff
+denver create yaks-dev --profile base --plugin discourse-yaks
 
 # Full environment with core branch
 denver create test-epic --profile epic-games --branch my-pr
 ```
+
+**Note**: Each environment gets a unique git branch named after the environment.
+The `--branch` flag specifies which branch to base it on (default: main).
 
 ### destroy
 
@@ -134,18 +154,26 @@ This removes the entire environment directory. Cannot be undone.
 
 ```
 ~/.denver/
+├── discourse.git/          # Bare repo (shared across environments)
 ├── profiles/
 │   ├── base.yml
 │   ├── full.yml
 │   └── epic-games.yml
 └── environments/
     ├── minimal/
-    │   ├── discourse/
+    │   ├── discourse/      # Worktree (branch: minimal)
+    │   ├── plugins/        # Cloned plugins
+    │   │   └── discourse-chat/
     │   └── .denver.yml
     └── yaks/
-        ├── discourse/
+        ├── discourse/      # Worktree (branch: yaks)
+        ├── plugins/
+        │   └── discourse-yaks/
         └── .denver.yml
 ```
+
+Plugins are cloned to `environments/<name>/plugins/` and symlinked into
+`discourse/plugins/` for each environment.
 
 ## Status
 
@@ -153,16 +181,18 @@ Version 20251109
 
 Currently implemented:
 - ✅ Profile loading from YAML
-- ✅ Environment creation with discourse cloning
+- ✅ Git worktrees for fast environment creation (<1 second)
+- ✅ Bare repo sharing (~400MB saved per environment)
+- ✅ Plugin cloning with symlinks
+- ✅ Command-line plugin additions (`--plugin`)
 - ✅ Branch selection for discourse core
 - ✅ Environment destruction
 
 Coming soon:
-- ⏳ Plugin cloning based on profiles
-- ⏳ Plugin branch overrides
+- ⏳ Plugin branch management (`denver plugin` command)
 - ⏳ Dev container config generation
 - ⏳ List environments command
-- ⏳ Open environment command
+- ⏳ Open environment command (launch VSCode)
 
 ## Use Cases
 
@@ -177,7 +207,7 @@ denver create test-pr --profile epic-games --branch fix/my-feature
 main dev environment.
 
 ```bash
-denver create yaks --profile base --plugin discourse-yaks:feature/new-stuff
+denver create yaks --profile base --plugin discourse-yaks
 ```
 
 **Multiple Projects**: Maintain separate environments for different plugins or
