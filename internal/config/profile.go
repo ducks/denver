@@ -74,3 +74,12 @@ func GetEnvironmentsDir() (string, error) {
 	}
 	return filepath.Join(denverDir, "environments"), nil
 }
+
+// GetBareRepoPath returns the path to the bare discourse repo (~/.denver/discourse.git)
+func GetBareRepoPath() (string, error) {
+	denverDir, err := GetDenverDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(denverDir, "discourse.git"), nil
+}
