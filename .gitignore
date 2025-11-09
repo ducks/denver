@@ -1,0 +1,6 @@
+# Binary
+denver
+
+# Go build cache
+*.test
+*.out
