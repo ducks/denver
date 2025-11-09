@@ -17,6 +17,21 @@ Discourse development environments. Uses git worktrees for instant environment
 creation (less than 1 second after initial setup). Each environment gets its
 own branch, plugin set, and isolated working directory.
 
+## Prerequisites
+
+Denver requires PostgreSQL and Redis to be running locally. You can install and run them however you prefer (system packages, Docker, Homebrew, etc.).
+
+**PostgreSQL**: Must be running and accessible (default port 5432)
+**Redis**: Must be running and accessible (default port 6379)
+
+Example with Docker:
+```bash
+docker run -d --name postgres -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:16
+docker run -d --name redis -p 6379:6379 redis:7
+```
+
+Or use your system package manager, Homebrew, etc.
+
 ## Installation
 
 ```bash
@@ -190,6 +205,7 @@ Currently implemented:
 
 Coming soon:
 - ⏳ Plugin branch management (`denver plugin` command)
+- ⏳ Database service management (auto-start postgres/redis with Docker)
 - ⏳ Dev container config generation
 - ⏳ List environments command
 - ⏳ Open environment command (launch VSCode)
