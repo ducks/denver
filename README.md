@@ -71,11 +71,17 @@ denver status
 # List all environments
 denver list
 
+# Create and switch to another environment
+denver create yaks --profile base --plugin discourse-yaks
+denver setup yaks
+denver switch yaks          # Stops minimal, starts yaks
+
 # Stop servers
 denver stop
 
-# Destroy environment when done
+# Destroy environments when done
 denver destroy minimal
+denver destroy yaks
 ```
 
 ## How It Works
@@ -210,6 +216,16 @@ Stop the currently running environment.
 ```bash
 denver stop
 ```
+
+### switch
+
+Switch to a different environment (stops current, starts new).
+
+```bash
+denver switch yaks
+```
+
+Convenience command that combines `denver stop` and `denver start`. If the target environment is already running, does nothing.
 
 ### status
 
