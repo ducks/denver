@@ -11,8 +11,8 @@ func TestSaveAndLoadActive(t *testing.T) {
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Create .denver directory
 	denverDir := filepath.Join(tmpDir, ".denver")
@@ -70,8 +70,8 @@ func TestLoadActiveNotFound(t *testing.T) {
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Create .denver directory
 	denverDir := filepath.Join(tmpDir, ".denver")
@@ -95,8 +95,8 @@ func TestClearActive(t *testing.T) {
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Create .denver directory
 	denverDir := filepath.Join(tmpDir, ".denver")

@@ -83,7 +83,7 @@ func startEnvironment(name string) error {
 	railsCmd.Stderr = railsLog
 
 	if err := railsCmd.Start(); err != nil {
-		railsLog.Close()
+		_ = railsLog.Close()
 		return fmt.Errorf("failed to start Rails server: %w", err)
 	}
 
@@ -101,7 +101,7 @@ func startEnvironment(name string) error {
 	emberLog, err := os.Create(emberLogPath)
 	if err != nil {
 		_ = railsCmd.Process.Kill()
-		railsLog.Close()
+		_ = railsLog.Close()
 		return fmt.Errorf("failed to create Ember log file: %w", err)
 	}
 	emberCmd.Stdout = emberLog
@@ -110,8 +110,8 @@ func startEnvironment(name string) error {
 	if err := emberCmd.Start(); err != nil {
 		// If ember fails, kill rails
 		_ = railsCmd.Process.Kill()
-		railsLog.Close()
-		emberLog.Close()
+		_ = railsLog.Close()
+		_ = emberLog.Close()
 		return fmt.Errorf("failed to start Ember server: %w", err)
 	}
 

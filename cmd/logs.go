@@ -72,7 +72,7 @@ func showLogs() error {
 		// Rails logs (written by denver start command)
 		logPath = filepath.Join(discourseDir, "log", "rails.log")
 		if _, err := os.Stat(logPath); os.IsNotExist(err) {
-			return fmt.Errorf("Rails log file not found at: %s", logPath)
+			return fmt.Errorf("rails log file not found at: %s", logPath)
 		}
 	}
 
