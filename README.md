@@ -39,7 +39,6 @@ Or use your system package manager, Homebrew, etc.
 Visit the [releases page](https://github.com/ducks/denver/releases) and download the binary for your platform:
 - Linux (amd64, arm64)
 - macOS (Intel, Apple Silicon)
-- Windows (amd64)
 
 Make it executable and move to your PATH:
 ```bash
