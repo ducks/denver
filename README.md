@@ -49,16 +49,32 @@ go build -o denver
 ## Quick Start
 
 ```bash
+# Check prerequisites
+denver doctor
+
 # Create a minimal environment (first run clones bare repo, takes a few minutes)
 denver create minimal --profile base
 
-# Create another environment (instant - uses worktree)
-denver create test-pr --profile base --branch fix/my-feature
+# Setup dependencies (one-time per environment)
+denver setup minimal
 
-# Add plugins to an environment
-denver create with-chat --profile base --plugin discourse-chat
+# Start Rails and Ember servers
+denver start minimal
 
-# Destroy an environment
+# View logs
+denver logs              # Rails logs
+denver logs --ember      # Ember logs
+
+# Check status
+denver status
+
+# List all environments
+denver list
+
+# Stop servers
+denver stop
+
+# Destroy environment when done
 denver destroy minimal
 ```
 
@@ -134,7 +150,9 @@ denver create <name> --profile <profile> [flags]
 Flags:
 - `--profile, -p`: Profile to use (required)
 - `--branch, -b`: Base branch for worktree (default: main)
-- `--plugin`: Add plugins beyond profile (format: name, repeatable)
+- `--plugin`: Add plugins beyond profile (repeatable)
+  - Simple name: `discourse-chat` (uses discourse org)
+  - Full path: `ducks/discourse-invite-stats` (custom org)
 
 Examples:
 
@@ -148,12 +166,91 @@ denver create test-buttons --profile base --branch fix/button-refactor
 # Add plugins to base profile
 denver create yaks-dev --profile base --plugin discourse-yaks
 
+# Add plugins from custom GitHub org
+denver create invite-stats --profile base --plugin ducks/discourse-invite-stats
+
 # Full environment with core branch
 denver create test-epic --profile epic-games --branch my-pr
 ```
 
 **Note**: Each environment gets a unique git branch named after the environment.
 The `--branch` flag specifies which branch to base it on (default: main).
+
+### setup
+
+Install dependencies for an environment (run once after creating).
+
+```bash
+denver setup <name>
+```
+
+This runs:
+- `bundle install` (Ruby gems)
+- `pnpm install` (JavaScript dependencies)
+- `bundle exec rake db:create db:migrate` (database setup)
+
+### start
+
+Start Rails and Ember servers for an environment.
+
+```bash
+denver start <name>
+```
+
+Servers run on:
+- Rails: http://localhost:3000
+- Ember: http://localhost:4200
+
+Only one environment can run at a time.
+
+### stop
+
+Stop the currently running environment.
+
+```bash
+denver stop
+```
+
+### status
+
+Show the currently running environment.
+
+```bash
+denver status
+```
+
+### logs
+
+View server logs for the running environment.
+
+```bash
+denver logs           # Rails logs (last 100 lines)
+denver logs -f        # Follow Rails logs
+denver logs --ember   # Ember logs
+denver logs --ember -f  # Follow Ember logs
+```
+
+### list
+
+List all environments.
+
+```bash
+denver list
+```
+
+Shows environment names, modification times, and which is currently running.
+
+### doctor
+
+Check that all prerequisites are installed and running.
+
+```bash
+denver doctor
+```
+
+Checks for:
+- git, ruby, bundler, node, pnpm
+- PostgreSQL and Redis availability
 
 ### destroy
 
@@ -163,7 +260,7 @@ Destroy an existing environment.
 denver destroy <name>
 ```
 
-This removes the entire environment directory. Cannot be undone.
+This removes the environment directory, git worktree, and git branch. If the branch has uncommitted changes, you'll be prompted before deletion.
 
 ## Directory Structure
 
@@ -194,21 +291,26 @@ Plugins are cloned to `environments/<name>/plugins/` and symlinked into
 
 Version 20251109
 
-Currently implemented:
+**Implemented:**
 - ✅ Profile loading from YAML
 - ✅ Git worktrees for fast environment creation (<1 second)
 - ✅ Bare repo sharing (~400MB saved per environment)
 - ✅ Plugin cloning with symlinks
 - ✅ Command-line plugin additions (`--plugin`)
+- ✅ Custom GitHub org support (e.g., `ducks/discourse-invite-stats`)
 - ✅ Branch selection for discourse core
-- ✅ Environment destruction
+- ✅ Environment setup (bundle, pnpm, database)
+- ✅ Server management (start, stop, status)
+- ✅ Log viewing (Rails and Ember)
+- ✅ List environments
+- ✅ Doctor command (prerequisite checking)
+- ✅ Smart environment destruction (prompts if branch has changes)
 
-Coming soon:
+**Coming soon:**
 - ⏳ Plugin branch management (`denver plugin` command)
-- ⏳ Database service management (auto-start postgres/redis with Docker)
-- ⏳ Dev container config generation
-- ⏳ List environments command
-- ⏳ Open environment command (launch VSCode)
+- ⏳ Database cloning from staging environments
+- ⏳ Nix shell auto-detection and wrapping
+- ⏳ Multi-environment support (auto port allocation)
 
 ## Use Cases
 
