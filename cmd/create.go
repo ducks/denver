@@ -38,7 +38,7 @@ func init() {
 	createCmd.Flags().StringVarP(&profileFlag, "profile", "p", "", "Profile to use for environment setup (required)")
 	createCmd.Flags().StringVarP(&branchFlag, "branch", "b", "", "Discourse core branch to checkout (default: main)")
 	createCmd.Flags().StringArrayVar(&pluginFlags, "plugin", []string{}, "Add or override plugin (format: name:branch, repeatable)")
-	createCmd.MarkFlagRequired("profile")
+	_ = createCmd.MarkFlagRequired("profile")
 }
 
 func createEnvironment(name string, profileName string, branch string, pluginOverrides []string) error {
