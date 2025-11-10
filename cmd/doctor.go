@@ -40,7 +40,7 @@ type checkResult struct {
 }
 
 func checkPrerequisites() error {
-	fmt.Println("Checking Denver prerequisites...\n")
+	fmt.Println("Checking Denver prerequisites...")
 
 	checks := []checkResult{
 		checkGit(),

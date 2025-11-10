@@ -34,8 +34,8 @@ seed:
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Load the profile
 	profile, err := LoadProfile("test")
@@ -74,8 +74,8 @@ func TestLoadProfileNotFound(t *testing.T) {
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	// Try to load non-existent profile
 	_, err := LoadProfile("nonexistent")
@@ -89,8 +89,8 @@ func TestGetDenverDir(t *testing.T) {
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	denverDir, err := GetDenverDir()
 	if err != nil {
@@ -108,8 +108,8 @@ func TestGetEnvironmentsDir(t *testing.T) {
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	envsDir, err := GetEnvironmentsDir()
 	if err != nil {
@@ -127,8 +127,8 @@ func TestGetBareRepoPath(t *testing.T) {
 
 	// Override home directory for testing
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", originalHome) }()
 
 	bareRepoPath, err := GetBareRepoPath()
 	if err != nil {

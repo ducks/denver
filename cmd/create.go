@@ -13,7 +13,7 @@ import (
 
 var (
 	profileFlag string
-	branchFlag  string
+	baseFlag    string
 	pluginFlags []string
 )
 
@@ -22,26 +22,28 @@ var createCmd = &cobra.Command{
 	Short: "Create a new Discourse environment",
 	Long: `Create a new isolated Discourse development environment from a profile.
 
+The environment name will be used as the branch name in the discourse worktree.
+
 Examples:
   denver create yaks --profile base --plugin discourse-yaks:feature/new-stuff
-  denver create test-epic --profile epic-games --branch my-pr
+  denver create test-epic --profile epic-games --base fix/button-refactor
   denver create minimal --profile base`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
-		return createEnvironment(name, profileFlag, branchFlag, pluginFlags)
+		return createEnvironment(name, profileFlag, baseFlag, pluginFlags)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(createCmd)
 	createCmd.Flags().StringVarP(&profileFlag, "profile", "p", "", "Profile to use for environment setup (required)")
-	createCmd.Flags().StringVarP(&branchFlag, "branch", "b", "", "Discourse core branch to checkout (default: main)")
+	createCmd.Flags().StringVar(&baseFlag, "base", "", "Base branch to branch from (default: main)")
 	createCmd.Flags().StringArrayVar(&pluginFlags, "plugin", []string{}, "Add or override plugin (format: name:branch, repeatable)")
 	_ = createCmd.MarkFlagRequired("profile")
 }
 
-func createEnvironment(name string, profileName string, branch string, pluginOverrides []string) error {
+func createEnvironment(name string, profileName string, baseBranch string, pluginOverrides []string) error {
 	fmt.Printf("Creating environment '%s' with profile '%s'\n", name, profileName)
 
 	// Load profile
@@ -81,9 +83,9 @@ func createEnvironment(name string, profileName string, branch string, pluginOve
 	}
 
 	// Create worktree for this environment
-	// Use environment name as branch name, base it on specified branch (or main)
+	// Environment name becomes the branch name, branching from base (or main)
 	fmt.Printf("Creating discourse worktree at %s...\n", discourseDir)
-	if err := createWorktree(bareRepo, discourseDir, name, branch); err != nil {
+	if err := createWorktree(bareRepo, discourseDir, name, baseBranch); err != nil {
 		return fmt.Errorf("failed to create worktree: %w", err)
 	}
 

@@ -149,7 +149,7 @@ denver create <name> --profile <profile> [flags]
 
 Flags:
 - `--profile, -p`: Profile to use (required)
-- `--branch, -b`: Base branch for worktree (default: main)
+- `--base`: Base branch to branch from (default: main)
 - `--plugin`: Add plugins beyond profile (repeatable)
   - Simple name: `discourse-chat` (uses discourse org)
   - Full path: `ducks/discourse-invite-stats` (custom org)
@@ -161,7 +161,7 @@ Examples:
 denver create yaks --profile base
 
 # Test a core PR (creates branch "test-buttons" from fix/button-refactor)
-denver create test-buttons --profile base --branch fix/button-refactor
+denver create test-buttons --profile base --base fix/button-refactor
 
 # Add plugins to base profile
 denver create yaks-dev --profile base --plugin discourse-yaks
@@ -170,11 +170,11 @@ denver create yaks-dev --profile base --plugin discourse-yaks
 denver create invite-stats --profile base --plugin ducks/discourse-invite-stats
 
 # Full environment with core branch
-denver create test-epic --profile epic-games --branch my-pr
+denver create test-epic --profile epic-games --base my-pr
 ```
 
 **Note**: Each environment gets a unique git branch named after the environment.
-The `--branch` flag specifies which branch to base it on (default: main).
+The `--base` flag specifies which branch to branch from (default: main).
 
 ### setup
 
@@ -318,7 +318,7 @@ Version 20251109
 changes.
 
 ```bash
-denver create test-pr --profile epic-games --branch fix/my-feature
+denver create test-pr --profile epic-games --base fix/my-feature
 ```
 
 **Plugin Development**: Work on plugins in isolation without affecting your
