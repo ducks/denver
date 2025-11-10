@@ -60,13 +60,18 @@ func stopEnvironment() error {
 }
 
 func killProcess(pid int, name string) error {
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return fmt.Errorf("failed to find %s process (PID: %d): %w", name, pid, err)
-	}
+	// Kill the entire process group (negative PID kills the group)
+	// This ensures child processes (like ember's thread-loader workers) are also killed
+	if err := syscall.Kill(-pid, syscall.SIGTERM); err != nil {
+		// If process group kill fails, try killing just the process
+		process, err := os.FindProcess(pid)
+		if err != nil {
+			return fmt.Errorf("failed to find %s process (PID: %d): %w", name, pid, err)
+		}
 
-	if err := process.Signal(syscall.SIGTERM); err != nil {
-		return fmt.Errorf("failed to stop %s server (PID: %d): %w", name, pid, err)
+		if err := process.Signal(syscall.SIGTERM); err != nil {
+			return fmt.Errorf("failed to stop %s server (PID: %d): %w", name, pid, err)
+		}
 	}
 
 	fmt.Printf("✓ %s server stopped (PID: %d)\n", name, pid)

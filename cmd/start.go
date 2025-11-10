@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/ducks/denver/internal/config"
 	"github.com/spf13/cobra"
@@ -60,14 +61,29 @@ func startEnvironment(name string) error {
 
 	fmt.Printf("Starting environment '%s'...\n", name)
 
+	// Create log directory if it doesn't exist
+	logDir := filepath.Join(discourseDir, "log")
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return fmt.Errorf("failed to create log directory: %w", err)
+	}
+
 	// Start Rails server
 	fmt.Println("Starting Rails server on port 3000...")
 	railsCmd := exec.Command("bundle", "exec", "rails", "server", "-p", "3000")
 	railsCmd.Dir = discourseDir
-	railsCmd.Stdout = nil // Run in background
-	railsCmd.Stderr = nil
+	railsCmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} // Create new process group
+
+	// Redirect Rails output to log file
+	railsLogPath := filepath.Join(logDir, "rails.log")
+	railsLog, err := os.Create(railsLogPath)
+	if err != nil {
+		return fmt.Errorf("failed to create Rails log file: %w", err)
+	}
+	railsCmd.Stdout = railsLog
+	railsCmd.Stderr = railsLog
 
 	if err := railsCmd.Start(); err != nil {
+		railsLog.Close()
 		return fmt.Errorf("failed to start Rails server: %w", err)
 	}
 
@@ -76,14 +92,26 @@ func startEnvironment(name string) error {
 
 	// Start Ember server
 	fmt.Println("Starting Ember server on port 4200...")
-	emberCmd := exec.Command("ember", "serve", "--port", "4200")
+	emberCmd := exec.Command("bin/ember-cli", "--port", "4200")
 	emberCmd.Dir = discourseDir
-	emberCmd.Stdout = nil // Run in background
-	emberCmd.Stderr = nil
+	emberCmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} // Create new process group
+
+	// Redirect Ember output to log file
+	emberLogPath := filepath.Join(logDir, "ember.log")
+	emberLog, err := os.Create(emberLogPath)
+	if err != nil {
+		railsCmd.Process.Kill()
+		railsLog.Close()
+		return fmt.Errorf("failed to create Ember log file: %w", err)
+	}
+	emberCmd.Stdout = emberLog
+	emberCmd.Stderr = emberLog
 
 	if err := emberCmd.Start(); err != nil {
 		// If ember fails, kill rails
 		railsCmd.Process.Kill()
+		railsLog.Close()
+		emberLog.Close()
 		return fmt.Errorf("failed to start Ember server: %w", err)
 	}
 

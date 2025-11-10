@@ -60,19 +60,19 @@ func setupEnvironment(name string) error {
 	}
 	fmt.Println("✓ Ruby dependencies installed")
 
-	// Database setup
+	// Pnpm install (must run before db:migrate because db:migrate precompiles assets)
+	fmt.Println("\nInstalling JavaScript dependencies (pnpm install)...")
+	if err := runCommand(discourseDir, "pnpm", "install"); err != nil {
+		return fmt.Errorf("pnpm install failed: %w", err)
+	}
+	fmt.Println("✓ JavaScript dependencies installed")
+
+	// Database setup (runs after pnpm because db:migrate precompiles assets)
 	fmt.Println("\nSetting up database...")
 	if err := runCommand(discourseDir, "bundle", "exec", "rake", "db:create", "db:migrate"); err != nil {
 		return fmt.Errorf("database setup failed: %w", err)
 	}
 	fmt.Println("✓ Database created and migrated")
-
-	// Yarn install
-	fmt.Println("\nInstalling JavaScript dependencies (yarn install)...")
-	if err := runCommand(discourseDir, "yarn", "install"); err != nil {
-		return fmt.Errorf("yarn install failed: %w", err)
-	}
-	fmt.Println("✓ JavaScript dependencies installed")
 
 	fmt.Printf("\n✓ Environment '%s' is ready!\n", name)
 	fmt.Printf("Use 'denver start %s' to start the servers\n", name)
