@@ -34,11 +34,26 @@ Or use your system package manager, Homebrew, etc.
 
 ## Installation
 
+**Download pre-built binary** (recommended):
+
+Visit the [releases page](https://github.com/ducks/denver/releases) and download the binary for your platform:
+- Linux (amd64, arm64)
+- macOS (Intel, Apple Silicon)
+- Windows (amd64)
+
+Make it executable and move to your PATH:
+```bash
+chmod +x denver-*
+sudo mv denver-* /usr/local/bin/denver
+```
+
+**Or install with Go**:
+
 ```bash
 go install github.com/ducks/denver@latest
 ```
 
-Or build from source:
+**Or build from source**:
 
 ```bash
 git clone https://github.com/ducks/denver.git
