@@ -33,9 +33,6 @@ jobs:
           # macOS arm64 (Apple Silicon)
           GOOS=darwin GOARCH=arm64 go build -o denver-darwin-arm64
 
-          # Windows amd64
-          GOOS=windows GOARCH=amd64 go build -o denver-windows-amd64.exe
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -44,7 +41,6 @@ jobs:
             denver-linux-arm64
             denver-darwin-amd64
             denver-darwin-arm64
-            denver-windows-amd64.exe
           draft: false
           prerelease: false
           generate_release_notes: true
