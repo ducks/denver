@@ -126,10 +126,26 @@ func buildPluginList(profilePlugins []config.PluginConfig, pluginFlags []string)
 
 	// Add plugins from command-line flags
 	for _, flag := range pluginFlags {
-		// For now, just parse plugin name (format: "discourse-yaks" or "discourse-yaks:branch")
-		// Branch support will come with `denver plugin` command
+		// Parse plugin (format: "name", "owner/name", "name:branch", or "owner/name:branch")
 		parts := strings.SplitN(flag, ":", 2)
-		pluginName := parts[0]
+		pluginSpec := parts[0]
+		branch := ""
+		if len(parts) > 1 {
+			branch = parts[1]
+		}
+
+		// Determine plugin name and repo
+		var pluginName, repo string
+		if strings.Contains(pluginSpec, "/") {
+			// Owner provided: "ducks/discourse-frndr"
+			repo = pluginSpec
+			repoParts := strings.Split(pluginSpec, "/")
+			pluginName = repoParts[len(repoParts)-1]
+		} else {
+			// No owner: "discourse-yaks" - default to discourse org
+			pluginName = pluginSpec
+			repo = "discourse/" + pluginName
+		}
 
 		// Check if plugin already exists in profile
 		exists := false
@@ -141,11 +157,10 @@ func buildPluginList(profilePlugins []config.PluginConfig, pluginFlags []string)
 		}
 
 		if !exists {
-			// Add new plugin (assume discourse org for now)
 			plugins = append(plugins, config.PluginConfig{
 				Name:   pluginName,
-				Repo:   "discourse/" + pluginName,
-				Branch: "", // Default branch
+				Repo:   repo,
+				Branch: branch,
 			})
 		}
 	}
