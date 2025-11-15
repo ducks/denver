@@ -22,6 +22,7 @@ type PluginConfig struct {
 	Repo    string `yaml:"repo"`
 	Branch  string `yaml:"branch"`
 	Private bool   `yaml:"private"`
+	Local   string `yaml:"local,omitempty"` // Local path to plugin for development
 }
 
 type ThemeConfig struct {
