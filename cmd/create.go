@@ -15,6 +15,7 @@ var (
 	profileFlag string
 	baseFlag    string
 	pluginFlags []string
+	localFlags  []string
 )
 
 var createCmd = &cobra.Command{
@@ -27,11 +28,12 @@ The environment name will be used as the branch name in the discourse worktree.
 Examples:
   denver create yaks --profile base --plugin discourse-yaks:feature/new-stuff
   denver create test-epic --profile epic-games --base fix/button-refactor
-  denver create minimal --profile base`,
+  denver create minimal --profile base
+  denver create frndr --profile base --local discourse-frndr:~/dev/discourse-frndr`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
-		return createEnvironment(name, profileFlag, baseFlag, pluginFlags)
+		return createEnvironment(name, profileFlag, baseFlag, pluginFlags, localFlags)
 	},
 }
 
@@ -40,10 +42,11 @@ func init() {
 	createCmd.Flags().StringVarP(&profileFlag, "profile", "p", "", "Profile to use for environment setup (required)")
 	createCmd.Flags().StringVar(&baseFlag, "base", "", "Base branch to branch from (default: main)")
 	createCmd.Flags().StringArrayVar(&pluginFlags, "plugin", []string{}, "Add or override plugin (format: name:branch, repeatable)")
+	createCmd.Flags().StringArrayVar(&localFlags, "local", []string{}, "Use local plugin path (format: name:path, repeatable)")
 	_ = createCmd.MarkFlagRequired("profile")
 }
 
-func createEnvironment(name string, profileName string, baseBranch string, pluginOverrides []string) error {
+func createEnvironment(name string, profileName string, baseBranch string, pluginOverrides []string, localOverrides []string) error {
 	fmt.Printf("Creating environment '%s' with profile '%s'\n", name, profileName)
 
 	// Load profile
@@ -91,8 +94,8 @@ func createEnvironment(name string, profileName string, baseBranch string, plugi
 
 	fmt.Println("✓ Discourse worktree created successfully")
 
-	// Build plugin list (profile + command-line additions)
-	plugins := buildPluginList(profile.Plugins, pluginOverrides)
+	// Build plugin list (profile + command-line additions + local overrides)
+	plugins := buildPluginList(profile.Plugins, pluginOverrides, localOverrides)
 
 	if len(plugins) > 0 {
 		fmt.Printf("\nCloning %d plugin(s)...\n", len(plugins))
@@ -110,8 +113,19 @@ func createEnvironment(name string, profileName string, baseBranch string, plugi
 		}
 	}
 
+	// Save environment configuration
+	envConfig := &config.EnvironmentConfig{
+		Name:    name,
+		Profile: profileName,
+		Base:    baseBranch,
+		Plugins: plugins,
+	}
+
+	if err := config.SaveEnvironmentConfig(envDir, envConfig); err != nil {
+		return fmt.Errorf("failed to save environment config: %w", err)
+	}
+
 	// TODO: Generate devcontainer.json
-	// TODO: Create .denver.yml
 
 	fmt.Printf("\nEnvironment '%s' created successfully!\n", name)
 	fmt.Printf("Location: %s\n", envDir)
@@ -119,7 +133,7 @@ func createEnvironment(name string, profileName string, baseBranch string, plugi
 	return nil
 }
 
-func buildPluginList(profilePlugins []config.PluginConfig, pluginFlags []string) []config.PluginConfig {
+func buildPluginList(profilePlugins []config.PluginConfig, pluginFlags []string, localFlags []string) []config.PluginConfig {
 	// Start with profile plugins
 	plugins := make([]config.PluginConfig, len(profilePlugins))
 	copy(plugins, profilePlugins)
@@ -165,13 +179,73 @@ func buildPluginList(profilePlugins []config.PluginConfig, pluginFlags []string)
 		}
 	}
 
+	// Apply local path overrides
+	for _, flag := range localFlags {
+		// Parse local flag (format: "name:path")
+		parts := strings.SplitN(flag, ":", 2)
+		if len(parts) != 2 {
+			fmt.Printf("Warning: invalid --local flag format '%s', expected 'name:path'\n", flag)
+			continue
+		}
+
+		pluginName := parts[0]
+		localPath := parts[1]
+
+		// Find and update existing plugin or add new one
+		found := false
+		for i := range plugins {
+			if plugins[i].Name == pluginName {
+				plugins[i].Local = localPath
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			// Add new plugin with only local path (no repo/branch needed)
+			plugins = append(plugins, config.PluginConfig{
+				Name:  pluginName,
+				Local: localPath,
+			})
+		}
+	}
+
 	return plugins
 }
 
 func clonePlugin(pluginsDir string, discourseDir string, plugin config.PluginConfig) error {
-	pluginPath := filepath.Join(pluginsDir, plugin.Name)
 	symlinkPath := filepath.Join(discourseDir, "plugins", plugin.Name)
 
+	// If local path is specified, symlink directly to it
+	if plugin.Local != "" {
+		fmt.Printf("  Linking %s (local)...\n", plugin.Name)
+
+		// Expand ~ to home directory
+		localPath := plugin.Local
+		if strings.HasPrefix(localPath, "~/") {
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("failed to get home directory: %w", err)
+			}
+			localPath = filepath.Join(homeDir, localPath[2:])
+		}
+
+		// Check that local path exists
+		if _, err := os.Stat(localPath); err != nil {
+			return fmt.Errorf("local plugin path does not exist: %s", localPath)
+		}
+
+		// Create symlink
+		if err := os.Symlink(localPath, symlinkPath); err != nil {
+			return fmt.Errorf("failed to create symlink: %w", err)
+		}
+
+		fmt.Printf("  ✓ %s linked to %s\n", plugin.Name, localPath)
+		return nil
+	}
+
+	// Otherwise, clone from GitHub
+	pluginPath := filepath.Join(pluginsDir, plugin.Name)
 	fmt.Printf("  Cloning %s...\n", plugin.Name)
 
 	// Build clone args
