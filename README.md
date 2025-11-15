@@ -173,6 +173,11 @@ Flags:
 - `--plugin`: Add plugins beyond profile (repeatable)
   - Simple name: `discourse-chat` (uses discourse org)
   - Full path: `ducks/discourse-invite-stats` (custom org)
+  - With branch: `discourse-yaks:feature/new-stuff`
+- `--local`: Use local plugin path for development (repeatable)
+  - Format: `plugin-name:~/path/to/plugin`
+  - Symlinks directly to your local plugin directory
+  - Changes appear instantly without git push/pull
 
 Examples:
 
@@ -188,6 +193,12 @@ denver create yaks-dev --profile base --plugin discourse-yaks
 
 # Add plugins from custom GitHub org
 denver create invite-stats --profile base --plugin ducks/discourse-invite-stats
+
+# Use local plugin for active development
+denver create frndr --profile base --local discourse-frndr:~/dev/discourse-frndr
+
+# Mix cloned and local plugins
+denver create test --profile base --plugin discourse-chat --local discourse-yaks:~/dev/discourse-yaks
 
 # Full environment with core branch
 denver create test-epic --profile epic-games --base my-pr
@@ -306,16 +317,22 @@ This removes the environment directory, git worktree, and git branch. If the bra
     │   ├── discourse/      # Worktree (branch: minimal)
     │   ├── plugins/        # Cloned plugins
     │   │   └── discourse-chat/
-    │   └── .denver.yml
+    │   └── .denver.yml     # Environment config
     └── yaks/
         ├── discourse/      # Worktree (branch: yaks)
+        │   └── plugins/
+        │       └── discourse-yaks -> ~/dev/discourse-yaks  # Local plugin symlink
         ├── plugins/
-        │   └── discourse-yaks/
+        │   └── discourse-chat/  # Cloned plugin
         └── .denver.yml
 ```
 
-Plugins are cloned to `environments/<name>/plugins/` and symlinked into
-`discourse/plugins/` for each environment.
+**Plugin Storage:**
+- **Cloned plugins**: Stored in `environments/<name>/plugins/` and symlinked into `discourse/plugins/`
+- **Local plugins** (`--local`): Symlinked directly from your local dev directory to `discourse/plugins/`
+
+The `.denver.yml` file tracks which plugins are local vs cloned, so future
+commands (like `denver sync`) can handle them appropriately.
 
 ## Status
 
@@ -328,6 +345,7 @@ Version 20251109
 - ✅ Plugin cloning with symlinks
 - ✅ Command-line plugin additions (`--plugin`)
 - ✅ Custom GitHub org support (e.g., `ducks/discourse-invite-stats`)
+- ✅ Local plugin development (`--local` flag for instant updates)
 - ✅ Branch selection for discourse core
 - ✅ Environment setup (bundle, pnpm, database)
 - ✅ Server management (start, stop, status)
@@ -355,8 +373,16 @@ denver create test-pr --profile epic-games --base fix/my-feature
 main dev environment.
 
 ```bash
+# Clone plugin from GitHub
 denver create yaks --profile base --plugin discourse-yaks
+
+# Or use local plugin for active development (instant updates)
+denver create yaks --profile base --local discourse-yaks:~/dev/discourse-yaks
 ```
+
+The `--local` flag symlinks directly to your local plugin directory, so changes
+appear instantly without needing to commit/push to GitHub. Perfect for active
+plugin development.
 
 **Multiple Projects**: Maintain separate environments for different plugins or
 features.
