@@ -242,6 +242,37 @@ Stop the currently running environment.
 denver stop
 ```
 
+### sync
+
+Update discourse core and/or plugins by pulling latest changes from git.
+
+```bash
+denver sync <name> [target]
+```
+
+Targets:
+- (none): Update discourse core and all remote plugins
+- `discourse`: Update only discourse core
+- `<plugin-name>`: Update only the specified plugin
+
+Local plugins (created with `--local`) are skipped since they're symlinks to your development directories.
+
+Examples:
+
+```bash
+# Update everything (discourse + all remote plugins)
+denver sync frndr
+
+# Update only discourse core
+denver sync frndr discourse
+
+# Update specific plugin
+denver sync frndr discourse-chat
+
+# Local plugin (will be skipped)
+denver sync frndr discourse-yaks  # "Plugin is local, skipping sync"
+```
+
 ### switch
 
 Switch to a different environment (stops current, starts new).
